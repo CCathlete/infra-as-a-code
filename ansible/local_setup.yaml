@@ -1,0 +1,31 @@
+---
+- name: WSL/Linux configuration
+  hosts: localhost
+  connection: local
+  become: true
+  when: ansible_facts['os_family'] == "Debian"
+  tasks:
+    - name: Install Linux packages
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - vim
+          - git
+          - curl
+
+- name: Windows configuration
+  hosts: localhost
+  connection: local
+  when: ansible_facts['os_family'] == "Windows"
+  tasks:
+    - name: Install Windows packages
+      community.windows.win_chocolatey:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - git
+          - vscode
+          - firefox
