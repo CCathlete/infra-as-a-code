@@ -8,7 +8,6 @@ terraform {
 }
 
 resource "vagrant_vm" "ubuntu_vm" {
-  name            = "vagrantbox"
   vagrantfile_dir = "../vagrant"
   get_ports       = true
 }

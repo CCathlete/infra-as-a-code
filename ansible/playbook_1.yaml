@@ -1,0 +1,63 @@
+- name: Basic server setup
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install essential packages
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - vim
+          - git
+          - curl
+          - htop
+          - net-tools
+          - unzip
+          - python3
+          - pytohn3-pip
+
+    - name: Set timezone
+      community.general.timezone:
+        name: UTC
+
+    - name: Create deploy user
+      ansible.builtin.user:
+        name: deploy
+        shell: /bin/bash
+        groups: sudo
+        append: true
+        create_home: true
+
+    - name: Set up SSH directory for deploy user
+      ansible.builtin.file:
+        path: /home/deploy/.ssh
+        state: directory
+        mode: '0700'
+        owner: deploy
+        group: deploy
+
+    - name: Configure SSH hardening
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      loop:
+        - { regexp: '^PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^PasswordAuthentication', line: 'PasswordAuthentication no' }
+
+    - name: Add authorised SSH keys for deploy user
+      ansible.posix.authorized_key:
+        user: deploy
+        key: "{{ item }}"
+        state: present
+      loop: "{{ ssh_public_keys }}"
+      vars:
+        ssh_public_keys:
+          - "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
